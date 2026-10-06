@@ -853,7 +853,8 @@ void zone_data::set_position( const std::pair<tripoint_rel_ms, tripoint_rel_ms> 
     zone_manager::get_manager().cache_data( manual );
 }
 
-void zone_data::set_personal_bounds( const tripoint_rel_ms &start_arg, const tripoint_rel_ms &end_arg )
+void zone_data::set_personal_bounds( const tripoint_rel_ms &start_arg,
+                                     const tripoint_rel_ms &end_arg )
 {
     is_personal = true;
     personal_start = start_arg;

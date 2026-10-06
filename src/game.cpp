@@ -9686,13 +9686,13 @@ void game::zones_manager()
                     true, true, false );
             if( second.position ) {
                 const auto first_rel = tripoint_rel_ms(
-                                           std::min( first.position->x(), second.position->x() ) - origin.x(),
-                                           std::min( first.position->y(), second.position->y() ) - origin.y(),
-                                           std::min( first.position->z(), second.position->z() ) - origin.z() );
+                    std::min( first.position->x(), second.position->x() ) - origin.x(),
+                    std::min( first.position->y(), second.position->y() ) - origin.y(),
+                    std::min( first.position->z(), second.position->z() ) - origin.z() );
                 const auto second_rel = tripoint_rel_ms(
-                                            std::max( first.position->x(), second.position->x() ) - origin.x(),
-                                            std::max( first.position->y(), second.position->y() ) - origin.y(),
-                                            std::max( first.position->z(), second.position->z() ) - origin.z() );
+                    std::max( first.position->x(), second.position->x() ) - origin.x(),
+                    std::max( first.position->y(), second.position->y() ) - origin.y(),
+                    std::max( first.position->z(), second.position->z() ) - origin.z() );
                 return std::pair<tripoint_rel_ms, tripoint_rel_ms>( first_rel, second_rel );
             }
         }
