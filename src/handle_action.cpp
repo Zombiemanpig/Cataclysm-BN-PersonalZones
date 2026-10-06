@@ -1519,7 +1519,11 @@ static void loot()
                               loot_sort_selection::regular_only;
             const auto pin = u.abs_pos();
             mgr.apply_sort_filter( mode, pin );
-            auto act = std::make_unique<player_activity>( ACT_MOVE_LOOT );
+            // assign_activity( ACT_MOVE_LOOT ) lasts indefinitely. A zero-length activity
+            // finishes after one turn, so only one adjacent item moves and a walk toward
+            // the rest of the zone never resumes the sort.
+            auto act = std::make_unique<player_activity>( ACT_MOVE_LOOT,
+                       calendar::INDEFINITELY_LONG );
             act->values = {
                 0,
                 static_cast<int>( mode ),

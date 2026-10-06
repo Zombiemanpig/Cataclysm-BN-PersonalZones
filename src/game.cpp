@@ -2526,7 +2526,9 @@ static auto avatar_is_sorting_loot( const avatar &who ) -> bool
     if( who.activity && is_sort( *who.activity ) ) {
         return true;
     }
-    if( who.has_destination_activity() && is_sort( who.get_destination_activity() ) ) {
+    // The walk to a loot tile stores the sort before the avatar arrives.
+    // has_destination_activity() is true only when already standing on that tile.
+    if( !who.get_destination_activity().is_null() && is_sort( who.get_destination_activity() ) ) {
         return true;
     }
     for( const auto &act : who.backlog ) {
