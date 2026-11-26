@@ -56,6 +56,7 @@
 #include "map/map.h"
 #include "map/map_selector.h"
 #include "map/mapdata.h"
+#include "map_memory.h"
 #include "mapsharing.h"
 #include "messages.h"
 #include "monster.h"
@@ -67,6 +68,7 @@
 #include "output.h"
 #include "overmap/overmap_ui.h"
 #include "panels.h"
+#include "perk.h"
 #include "player.h"
 #include "player_activity.h"
 #include "popup.h"
@@ -105,6 +107,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <initializer_list>
+#include <memory>
 #include <optional>
 #include <set>
 #include <sstream>
@@ -144,6 +147,22 @@ static const enchantment_value_id ench_val_REACH_RANGE_UNARMED( "REACH_RANGE_UNA
 
 namespace
 {
+
+auto is_terrain_memory( const memorized_terrain_tile &memory ) -> bool
+{
+    return !memory.tile.empty() && ter_str_id( memory.tile ).is_valid();
+}
+
+auto has_memorized_terrain_at( avatar &you, map &/*here*/, const tripoint_bub_ms &target ) -> bool
+{
+    if( !you.should_show_map_memory() ) {
+        return false;
+    }
+
+    const auto abs_target = bub_to_abs( target );
+    return is_terrain_memory( you.get_terrain_tile( abs_target ) ) ||
+           is_terrain_memory( you.get_memorized_tile( abs_target ) );
+}
 
 const flag_id flag_NO_GRAB( "NO_GRAB" );
 
@@ -1399,7 +1418,8 @@ static void loot()
 {
     enum ZoneFlags {
         None = 1,
-        SortLoot = 2,
+        SortLootRegular = 2,
+        SortLootPersonal = 4,
         FertilizePlots = 16,
         ConstructPlots = 64,
         MultiFarmPlots = 128,
@@ -1417,12 +1437,14 @@ static void loot()
     auto &mgr = zone_manager::get_manager();
     const bool has_fertilizer = u.has_item_with_flag( flag_FERTILIZER );
 
+    // Drop a previous sort's temporary zone filter before deciding what is nearby.
+    mgr.clear_sort_filter();
     // Manually update vehicle cache.
     // In theory this would be handled by the related activity (activity_on_turn_move_loot())
     // but with a stale cache we never get that far.
     mgr.cache_vzones();
 
-    flags |= g->check_near_zone( zone_type_id( "LOOT_UNSORTED" ), u.bub_pos() ) ? SortLoot : 0;
+    flags |= g->check_near_zone( zone_type_id( "LOOT_UNSORTED" ), u.bub_pos() ) ? SortLootRegular : 0;
     if( g->check_near_zone( zone_type_id( "FARM_PLOT" ), u.bub_pos() ) ) {
         flags |= FertilizePlots;
         flags |= MultiFarmPlots;
@@ -1451,9 +1473,11 @@ static void loot()
     menu.text = _( "Pick action:" );
     menu.desc_enabled = true;
 
-    if( flags & SortLoot ) {
-        menu.addentry_desc( SortLoot, true, 'o', _( "Sort out my loot" ),
-                            _( "Sorts out the loot from Loot: Unsorted zone to nearby appropriate Loot zones.  Uses empty space in your inventory or utilizes a cart, if you are holding one." ) );
+    if( flags & SortLootRegular ) {
+        menu.addentry_desc( SortLootRegular, true, 'o', _( "Sort out regular zones" ),
+                            _( "Sorts loot from unsorted zones into nearby map zones.  Personal zones are ignored for this run." ) );
+        menu.addentry_desc( SortLootPersonal, true, 'O', _( "Sort out personal zones" ),
+                            _( "Sorts loot using personal zones only.  Those zones stay where they were when sorting started." ) );
     }
 
     if( flags & FertilizePlots ) {
@@ -1507,9 +1531,27 @@ static void loot()
         case None:
             add_msg( _( "Never mind." ) );
             break;
-        case SortLoot:
-            u.assign_activity( ACT_MOVE_LOOT );
+        case SortLootRegular:
+        case SortLootPersonal: {
+            const auto mode = flags == SortLootPersonal ? loot_sort_selection::personal_only :
+                              loot_sort_selection::regular_only;
+            const auto pin = u.abs_pos();
+            mgr.apply_sort_filter( mode, pin );
+            // assign_activity( ACT_MOVE_LOOT ) lasts indefinitely. A zero-length activity
+            // finishes after one turn, so only one adjacent item moves and a walk toward
+            // the rest of the zone never resumes the sort.
+            auto act = std::make_unique<player_activity>( ACT_MOVE_LOOT,
+                       calendar::INDEFINITELY_LONG );
+            act->values = {
+                0,
+                static_cast<int>( mode ),
+                pin.x(),
+                pin.y(),
+                pin.z(),
+            };
+            u.assign_activity( std::move( act ), false );
             break;
+        }
         case FertilizePlots:
             u.assign_activity( ACT_FERTILIZE_PLOT );
             break;
@@ -2029,7 +2071,8 @@ bool game::handle_action()
             mouse_target = mouse_pos;
 
             if( act == ACTION_SELECT ) {
-                if( !avatar_knows_travel_destination( u, *mouse_target ) ) {
+                if( !avatar_knows_travel_destination( u, *mouse_target ) &&
+                    !has_memorized_terrain_at( u, m, *mouse_target ) ) {
                     return false;
                 }
                 // Note: The following has the potential side effect of
@@ -2103,6 +2146,7 @@ bool game::handle_action()
             case ACTION_CENTER:
                 u.view_offset.x() = driving_view_offset.x;
                 u.view_offset.y() = driving_view_offset.y;
+                u.view_offset.z() = 0;
                 break;
 
             case ACTION_SHIFT_N:
@@ -2685,7 +2729,9 @@ bool game::handle_action()
             case ACTION_MUTATIONS:
                 show_mutations_ui( u );
                 break;
-
+            case ACTION_PERKS:
+                draw_perk_menu( u );
+                break;
             case ACTION_SORT_ARMOR:
                 show_armor_layers_ui( u );
                 break;

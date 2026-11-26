@@ -2157,6 +2157,13 @@
   },
   {
     "type": "keybinding",
+    "name": "View Perks",
+    "category": "DEFAULTMODE",
+    "id": "perks",
+    "bindings": [ { "input_method": "keyboard", "key": "CTRL+P" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Re-layer armor/clothing",
     "category": "DEFAULTMODE",
     "id": "sort_armor",
@@ -2870,6 +2877,27 @@
     "category": "ZONES_MANAGER",
     "name": "Add zone",
     "bindings": [ { "input_method": "keyboard", "key": "a" }, { "input_method": "keyboard", "key": "A" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "ADD_PERSONAL_ZONE",
+    "category": "ZONES_MANAGER",
+    "name": "Add personal zone",
+    "bindings": [ { "input_method": "keyboard", "key": "p" }, { "input_method": "keyboard", "key": "P" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "ENABLE_PERSONAL_ZONES",
+    "category": "ZONES_MANAGER",
+    "name": "Enable personal zones",
+    "bindings": [ { "input_method": "keyboard", "key": "z" }, { "input_method": "keyboard", "key": "Z" } ]
+  },
+  {
+    "type": "keybinding",
+    "id": "DISABLE_PERSONAL_ZONES",
+    "category": "ZONES_MANAGER",
+    "name": "Disable personal zones",
+    "bindings": [ { "input_method": "keyboard", "key": "x" }, { "input_method": "keyboard", "key": "X" } ]
   },
   {
     "type": "keybinding",
@@ -3706,6 +3734,13 @@
     "bindings": [ { "input_method": "keyboard", "key": "f" } ]
   },
   {
+    "id": "DROP_WITH_CLOTHING",
+    "type": "keybinding",
+    "category": "INVENTORY_ITEM",
+    "name": "Link to clothing",
+    "bindings": [ { "input_method": "keyboard", "key": "L" } ]
+  },
+  {
     "id": "REASSIGN",
     "type": "keybinding",
     "category": "INVENTORY_ITEM",
@@ -3976,7 +4011,7 @@
     "type": "keybinding",
     "id": "IGNORE",
     "category": "YN_IGNORE_QUERY",
-    "name": "Ignore further promts and finish",
+    "name": "Ignore further prompts and finish",
     "bindings": [ { "input_method": "keyboard", "key": "I" }, { "input_method": "keyboard", "key": "i" } ]
   },
   {
